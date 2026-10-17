@@ -1,9 +1,9 @@
 export async function onRequestGet(context) {
-    // Pega o nome da cidade pela URL (ex: /api/clima?cidade=Londres) ou usa Curitiba como padrão
+    // Recolhe o nome da cidade através da URL (ex: /api/clima?cidade=Londres) ou usa Curitiba como padrão
     const url = new URL(context.request.url);
     const cidade = url.searchParams.get('cidade') || 'Curitiba';
     
-    // Resgata a chave da OpenWeather configurada no painel da Cloudflare
+    // Resgata a chave da OpenWeather configurada nas Variáveis de Ambiente da Cloudflare
     const apiKey = context.env.OPENWEATHER_API_KEY;
 
     // URL da OpenWeather configurada para o sistema métrico (Celsius) e em português
