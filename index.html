@@ -3,61 +3,81 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Minha API na Cloudflare</title>
+    <title>Clima em Tempo Real</title>
     <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body class="bg-gray-100 min-h-screen p-8 font-sans">
+<body class="bg-blue-50 min-h-screen flex items-center justify-center p-4 font-sans">
     
-    <div class="max-w-4xl mx-auto">
-        <header class="text-center mb-10">
-            <h1 class="text-3xl font-bold text-gray-800 mb-4">Consumindo minha própria API</h1>
-            <button id="btn-carregar" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg transition-colors cursor-pointer">
-                Buscar Dados da API
-            </button>
-        </header>
+    <div class="bg-white p-8 rounded-3xl shadow-xl w-full max-w-sm text-center">
+        <h1 class="text-2xl font-bold text-gray-800 mb-6">Previsão do Tempo</h1>
+        
+        <input type="text" id="input-cidade" placeholder="Digite a cidade..." class="w-full px-4 py-2 mb-4 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400">
+        
+        <button id="btn-buscar" class="w-full bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded-lg transition-colors cursor-pointer mb-6">
+            Buscar Clima
+        </button>
 
-        <!-- Spinner de Carregamento (Oculto por padrão) -->
-        <div id="loading" class="hidden flex justify-center my-8">
-            <div class="animate-spin rounded-full h-12 w-12 border-t-4 border-b-4 border-blue-600"></div>
+        <!-- Loading -->
+        <div id="loading" class="hidden flex justify-center mb-4">
+            <div class="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-500"></div>
         </div>
 
-        <!-- Grid onde os dados vão aparecer -->
-        <div id="grid-resultados" class="grid grid-cols-1 md:grid-cols-3 gap-6"></div>
+        <!-- Resultado -->
+        <div id="resultado" class="hidden flex flex-col items-center">
+            <h2 id="nome-cidade" class="text-xl font-semibold text-gray-700"></h2>
+            <img id="icone-clima" src="" alt="Ícone do Clima" class="w-24 h-24 my-2">
+            <p id="temperatura" class="text-5xl font-bold text-gray-900 mb-2"></p>
+            <p id="descricao" class="text-gray-500 capitalize text-lg"></p>
+            <div class="flex gap-4 mt-4 text-sm text-gray-400">
+                <span id="umidade"></span>
+                <span id="vento"></span>
+            </div>
+        </div>
+        
+        <p id="mensagem-erro" class="hidden text-red-500 font-medium mt-4"></p>
     </div>
 
     <script>
-        const botao = document.getElementById('btn-carregar');
-        const grid = document.getElementById('grid-resultados');
+        const btnBuscar = document.getElementById('btn-buscar');
+        const inputCidade = document.getElementById('input-cidade');
         const loading = document.getElementById('loading');
+        const resultado = document.getElementById('resultado');
+        const mensagemErro = document.getElementById('mensagem-erro');
 
-        botao.addEventListener('click', async () => {
-            // Estado de carregamento
-            botao.disabled = true;
-            botao.classList.add('opacity-50');
-            grid.innerHTML = '';
+        btnBuscar.addEventListener('click', async () => {
+            const cidade = inputCidade.value.trim();
+            
+            btnBuscar.disabled = true;
+            resultado.classList.add('hidden');
+            mensagemErro.classList.add('hidden');
             loading.classList.remove('hidden');
 
             try {
-                // Chama a API que criamos no passo 2
-                const resposta = await fetch('/api/posts');
+                // Monta a URL. Se o input estiver vazio, o back-end usará a cidade padrão.
+                const url = cidade ? `/api/clima?cidade=${encodeURIComponent(cidade)}` : '/api/clima';
+                const resposta = await fetch(url);
                 const dados = await resposta.json();
 
-                // Renderiza os dados na tela
-                dados.forEach(item => {
-                    grid.innerHTML += `
-                        <div class="bg-white p-6 rounded-xl shadow hover:shadow-lg transition-shadow border-t-4 border-blue-500">
-                            <h2 class="text-xl font-bold text-gray-800 mb-2">${item.titulo}</h2>
-                            <p class="text-gray-600">${item.resumo}</p>
-                        </div>
-                    `;
-                });
+                if (dados.cod === "404") throw new Error("Cidade não encontrada.");
+
+                // Preenche os dados na tela
+                document.getElementById('nome-cidade').textContent = `${dados.name}, ${dados.sys.country}`;
+                document.getElementById('temperatura').textContent = `${Math.round(dados.main.temp)}°C`;
+                document.getElementById('descricao').textContent = dados.weather[0].description;
+                document.getElementById('umidade').textContent = `Umidade: ${dados.main.humidity}%`;
+                document.getElementById('vento').textContent = `Vento: ${dados.wind.speed} m/s`;
+                
+                // Puxa o ícone oficial da OpenWeather
+                const iconCode = dados.weather[0].icon;
+                document.getElementById('icone-clima').src = `https://openweathermap.org/img/wn/${iconCode}@2x.png`;
+
+                resultado.classList.remove('hidden');
             } catch (erro) {
-                grid.innerHTML = `<p class="text-red-500 font-bold col-span-3 text-center">Erro ao buscar dados: ${erro.message}</p>`;
+                mensagemErro.textContent = erro.message || "Erro ao buscar o clima.";
+                mensagemErro.classList.remove('hidden');
             } finally {
-                // Finaliza carregamento
                 loading.classList.add('hidden');
-                botao.disabled = false;
-                botao.classList.remove('opacity-50');
+                btnBuscar.disabled = false;
             }
         });
     </script>
