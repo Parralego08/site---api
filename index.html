@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Minha API na Cloudflare</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 min-h-screen p-8 font-sans">
+    
+    <div class="max-w-4xl mx-auto">
+        <header class="text-center mb-10">
+            <h1 class="text-3xl font-bold text-gray-800 mb-4">Consumindo minha própria API</h1>
+            <button id="btn-carregar" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg transition-colors cursor-pointer">
+                Buscar Dados da API
+            </button>
+        </header>
+
+        <!-- Spinner de Carregamento (Oculto por padrão) -->
+        <div id="loading" class="hidden flex justify-center my-8">
+            <div class="animate-spin rounded-full h-12 w-12 border-t-4 border-b-4 border-blue-600"></div>
+        </div>
+
+        <!-- Grid onde os dados vão aparecer -->
+        <div id="grid-resultados" class="grid grid-cols-1 md:grid-cols-3 gap-6"></div>
+    </div>
+
+    <script>
+        const botao = document.getElementById('btn-carregar');
+        const grid = document.getElementById('grid-resultados');
+        const loading = document.getElementById('loading');
+
+        botao.addEventListener('click', async () => {
+            // Estado de carregamento
+            botao.disabled = true;
+            botao.classList.add('opacity-50');
+            grid.innerHTML = '';
+            loading.classList.remove('hidden');
+
+            try {
+                // Chama a API que criamos no passo 2
+                const resposta = await fetch('/api/posts');
+                const dados = await resposta.json();
+
+                // Renderiza os dados na tela
+                dados.forEach(item => {
+                    grid.innerHTML += `
+                        <div class="bg-white p-6 rounded-xl shadow hover:shadow-lg transition-shadow border-t-4 border-blue-500">
+                            <h2 class="text-xl font-bold text-gray-800 mb-2">${item.titulo}</h2>
+                            <p class="text-gray-600">${item.resumo}</p>
+                        </div>
+                    `;
+                });
+            } catch (erro) {
+                grid.innerHTML = `<p class="text-red-500 font-bold col-span-3 text-center">Erro ao buscar dados: ${erro.message}</p>`;
+            } finally {
+                // Finaliza carregamento
+                loading.classList.add('hidden');
+                botao.disabled = false;
+                botao.classList.remove('opacity-50');
+            }
+        });
+    </script>
+</body>
+</html>
